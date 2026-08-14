@@ -37,6 +37,16 @@ int stringExecute(char *cmd, char **cmdArg)
   if (pid == 0)
   {
     execvp(cmd, cmdArg);
+    // só chega aqui se execvp falhou
+    if (errno == ENOENT)
+    {
+      fprintf(stderr, "%s: comando não encontrado\n", cmd);
+    }
+    else
+    {
+      perror(cmd);
+    }
+    exit(EXIT_FAILURE);
   }
   else
   {
