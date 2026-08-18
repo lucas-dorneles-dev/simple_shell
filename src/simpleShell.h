@@ -31,16 +31,18 @@ typedef enum Builtin{
 
 void history(void);
 //
-int stringRead(char* input_user, char** argumentos);
+int stringRead(char* input, char** argumentos);
 //
 int stringExecute(char* cmd, char** cmdArg);
 //
-void builtin_impl_cd(char** args, size_t n_args);
+void builtinImplementCd(char** args, size_t nArgs);
 //
-void builtin_impl_pwd(char** args, size_t n_args);
+void builtinImplementPWD(char** args, size_t nArgs);
 //
-void readJson(char* file_contents);
+void readJson(char* fileContents);
 //
 void loadJsonFile(const char* filename);
+//
+int findExtension(char* cmdArg);
 
 #endif

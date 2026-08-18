@@ -1,4 +1,17 @@
 [
-  {"comando": "ls", "descricao": "teste descrição", "exemplo": "teste exemplo"},
-  {"comando": "cat", "descricao": "Mostra o conteúdo de um arquivo", "exemplo": "cat arquivo.txt"}
+  {
+    "comando": "ls",
+    "descricao": "Lista os arquivos e pastas que estão no diretório atual.",
+    "exemplo": "ls -l"
+  },
+  {
+    "comando": "cat",
+    "descricao": "Lê arquivos e os imprime na tela. Muito útil para ver textos rapidamente.",
+    "exemplo": "cat arquivo.txt"
+  },
+  {
+    "comando":"nano",
+    "descricao":"Serve para editar texto pelo terminal.\nObservação: para fechar utilizar crtl + o, depois enter(isso salva as alterações) e por fim dar crtl + x",
+    "exemplo":"nano arquivo.txt"
+  }
 ]

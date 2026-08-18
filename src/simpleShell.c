@@ -4,38 +4,45 @@ char CWD[PATH_MAX];
 DidacticCmd didactic_cmds[MAX_DIDACTIC_CMDS];
 int num_didactic_cmds = 0;
 
+// Le a linha de comando e tokeniza eles
 int stringRead(char *input, char **args)
 {
-  int i = 0;
+  int tokenReads = 0;
+  // aponta para o primeiro char do token (cmd)
   char *token = strtok(input, TOKEN_SEP);
-
-  while (token != NULL && i < (MAX_ARGS - 1))
+  // para quando não encontra mais token e reserva o ultimo para nulificar
+  while (token != NULL && tokenReads < (MAX_ARGS - 1))
   {
-    args[i++] = token;
-    token = strtok(NULL, " \t");
+    // o bloco guarda o token no arry
+    args[tokenReads++] = token;
+    token = strtok(NULL, TOKEN_SEP);
   }
-  args[i] = NULL;
-  return i;
+  // nulifica a ultima possição
+  args[tokenReads] = NULL;
+  // retorno a quantidade de argumentos lidos
+  return tokenReads;
 }
 
 int stringExecute(char *cmd, char **cmdArg)
 {
-
+  // imprime o nome do comando a ser executado
   fprintf(stdout, "Executando: %s \n", cmd);
 
   int status;
-  pid_t pid;
+  pid_t pid; // id do processo
 
-  pid = fork();
+  pid = fork(); // duplica o processo em pai -> filho
 
   if (pid < 0)
   {
+    // se o pid retornar um valor < 0 é porque deu problema no fork()
     fprintf(stderr, "Comando não executado! \n");
     return -1;
   }
 
   if (pid == 0)
   {
+    // o filho procura o executavel do comando e executa ele
     execvp(cmd, cmdArg);
     // só chega aqui se execvp falhou
     if (errno == ENOENT)
@@ -50,28 +57,36 @@ int stringExecute(char *cmd, char **cmdArg)
   }
   else
   {
-    // o pai precisa esperar o filho executar o comadno
+    // o pai precisa esperar o filho executar o comando
+    // se o pai não conseguiu esperar retorna o -1 e printa o erro
     if (waitpid(pid, &status, 0) != pid)
     {
       fprintf(stderr, "não conseguiu esperar o filho");
       return -1;
     }
   }
+  // retorna o status do programa executado com as informações empacotadas pelo próprio kernel
   return status;
 }
 
-void (*BUILTIN_TABLE[])(char **args, size_t n_args) = {
-    [CD] = builtin_impl_cd,
-    [PWD] = builtin_impl_pwd,
+// variável global
+// array onde cada posição guarda um ponteiro pra função
+void (*BUILTIN_TABLE[])(char **args, size_t numArgs) = {
+    // posição [CD] aponta para a função builtinImplementCd
+    [CD] = builtinImplementCd,
+    // posição [PWD] aponta para a função builtinImplementPWD
+    [PWD] = builtinImplementPWD,
 };
 
-Builtin builtin_code(char *cmd)
+// Identifica se cmd corresponde a um builtin (cd, pwd, etc)
+// e retorna o valor do enum correspondente (INVALID se não for nenhum)
+Builtin builtinCode(char *cmd)
 {
-  if (!strncmp(cmd, "cd", 2))
+  if (!strcmp(cmd, "cd"))
   {
     return CD;
   }
-  else if (!strncmp(cmd, "pwd", 3))
+  else if (!strcmp(cmd, "pwd"))
   {
     return PWD;
   }
@@ -81,37 +96,55 @@ Builtin builtin_code(char *cmd)
   }
 }
 
-int is_builtin(char *cmd)
+// valida se o builtin é valido
+int isBuiltin(char *cmd)
 {
-  return builtin_code(cmd) != INVALID;
+  return builtinCode(cmd) != INVALID;
 }
 
-void s_execute_builtin(char *cmd, char **args, size_t n_args)
+// executa o builtin
+void stringToExecuteBuiltin(char *cmd, char **args, size_t n_args)
 {
-  BUILTIN_TABLE[builtin_code(cmd)](args, n_args);
+  // 1-> acha o ponteiro certo          2-> chama esse ponteiro,
+  //   (busca na tabela)                entregando os argumentos
+  BUILTIN_TABLE[builtinCode(cmd)](args, n_args);
 }
 
-void refresh_cwd(void)
+// atualizar o diretório de trabalho atual
+// CWD = Current Working Directory
+void refreshCWD(void)
 {
+  // pega o caminho absoluto do dir atual
+  // se da certo retorna o buffer(dir atual)
+  // se falhar retorna null e o erro
   if (getcwd(CWD, sizeof(CWD)) == NULL)
   {
-    fprintf(stderr, "Error: Could not read working dir");
+    perror("Erro: Não foi possível ler o diretório de trabalho\n");
     exit(1);
   }
 }
 
-void builtin_impl_cd(char **args, size_t n_args)
+// implementação do comando cd
+void builtinImplementCd(char **args, size_t nArgs)
 {
-  char *new_dir = *args;
-  if (chdir(new_dir) != 0)
+  if (nArgs == 0)
   {
-    fprintf(stderr, "Error: Could not change directory");
-    exit(1);
+    fprintf(stderr, "Erro: faltando argumento no cd\nExemplo: cd Documentos/simple_shell\n");
+    return;
   }
-  refresh_cwd();
+  // lembrando que o args[0] aqui ta valendo o args [1]
+  // ele é o primeiro depois do cmd
+  char *newDir = args[0];
+  if (chdir(newDir) != 0)
+  {
+    perror("cd");
+    return;
+  }
+  refreshCWD();
 }
 
-void builtin_impl_pwd(char **args, size_t n_args)
+// imprime o caminho absoluto do diretório atual
+void builtinImplementPWD(char **args, size_t n_args)
 {
   fprintf(stdout, "%s\n", CWD);
 }
@@ -240,9 +273,9 @@ void history(void)
     }
 
     char **cmdArg = args;
-    if (is_builtin(cmd))
+    if (isBuiltin(cmd))
     {
-      s_execute_builtin(cmd, (cmdArg + 1), argsRead - 1);
+      stringToExecuteBuiltin(cmd, (cmdArg + 1), argsRead - 1);
     }
     else
     {
