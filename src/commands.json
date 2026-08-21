@@ -13,5 +13,10 @@
     "comando":"nano",
     "descricao":"Serve para editar texto pelo terminal.\nObservação: para fechar utilizar crtl + o, depois enter(isso salva as alterações) e por fim dar crtl + x",
     "exemplo":"nano arquivo.txt"
+  },
+  {
+    "comando":"rm",
+    "descricao": "Remove (excluir), um arquivo ou diretório",
+    "exemplo":"Exclusão de arquivo: rm arquivo.txt\nExclusão de diretório: rm -r Documentos\nAtenção! para excluir um diretório sem precisar pedir permissão utiliza-se rm -rf Documentos, porém rm -rf / exclui o sistema inteiro"
   }
 ]

@@ -1,8 +1,8 @@
 #include "simpleShell.h"
 // variaveis globais
 char CWD[PATH_MAX];
-DidacticCmd didactic_cmds[MAX_DIDACTIC_CMDS];
-int num_didactic_cmds = 0;
+DidacticCmd didacticCMD[MAX_DIDACTIC_CMDS];
+int numDidacticCMD = 0;
 
 // Le a linha de comando e tokeniza eles
 int stringRead(char *input, char **args)
@@ -103,11 +103,11 @@ int isBuiltin(char *cmd)
 }
 
 // executa o builtin
-void stringToExecuteBuiltin(char *cmd, char **args, size_t n_args)
+void stringToExecuteBuiltin(char *cmd, char **args, size_t nArgs)
 {
   // 1-> acha o ponteiro certo          2-> chama esse ponteiro,
   //   (busca na tabela)                entregando os argumentos
-  BUILTIN_TABLE[builtinCode(cmd)](args, n_args);
+  BUILTIN_TABLE[builtinCode(cmd)](args, nArgs);
 }
 
 // atualizar o diretório de trabalho atual
@@ -144,7 +144,7 @@ void builtinImplementCd(char **args, size_t nArgs)
 }
 
 // imprime o caminho absoluto do diretório atual
-void builtinImplementPWD(char **args, size_t n_args)
+void builtinImplementPWD(char **args, size_t nArgs)
 {
   fprintf(stdout, "%s\n", CWD);
 }
@@ -162,18 +162,18 @@ void readJson(char *file_contents)
   // Itera sobre o array JSON e popula o vetor de structs
   cJSON_ArrayForEach(cmd, root)
   {
-    if (num_didactic_cmds >= MAX_DIDACTIC_CMDS)
+    if (numDidacticCMD >= MAX_DIDACTIC_CMDS)
       break;
 
     const char *name = cJSON_GetObjectItem(cmd, "comando")->valuestring;
     const char *desc = cJSON_GetObjectItem(cmd, "descricao")->valuestring;
     const char *ex = cJSON_GetObjectItem(cmd, "exemplo")->valuestring;
 
-    strncpy(didactic_cmds[num_didactic_cmds].name, name, 49);
-    strncpy(didactic_cmds[num_didactic_cmds].desc, desc, 255);
-    strncpy(didactic_cmds[num_didactic_cmds].ex, ex, 255);
+    strncpy(didacticCMD[numDidacticCMD].name, name, 49);
+    strncpy(didacticCMD[numDidacticCMD].desc, desc, 255);
+    strncpy(didacticCMD[numDidacticCMD].ex, ex, 255);
 
-    num_didactic_cmds++;
+    numDidacticCMD++;
   }
 
   cJSON_Delete(root); // Libera a memória alocada pelo cJSON
@@ -213,28 +213,32 @@ void loadJsonFile(const char *filename)
 
 void history(void)
 {
+  // se ele não consegue nem carregar o historico, ele aborta
   if (!linenoiseHistorySetMaxLen(HISTORY_LENGTH))
   {
-    fprintf(stderr, "Não foi possivel configurar o historico");
+    fprintf(stderr, "Não foi possivel configurar o historico\n");
     exit(1);
   }
   char *line;
   char *args[MAX_ARGS];
 
+  // o prompt é o nome do usuário (L do REPL)
   while ((line = linenoise(PROMPT)) != NULL)
   {
+    linenoiseHistoryAdd(line);
 
     // realiza a leitura
     int argsRead = stringRead(line, args);
 
-    // printa o que foi lido
+// printa o que foi lido
+#ifdef SHELL_DEBUG
     fprintf(stdout, "Lido %d argumentos\n", argsRead);
 
     for (int i = 0; i < argsRead; i++)
     {
       fprintf(stdout, "args[%d] = %s\n", i, args[i]);
     }
-
+#endif
     // Pula as linhas vazias
     if (argsRead == 0)
     {
@@ -248,28 +252,31 @@ void history(void)
 
     if (argsRead >= 2 && strcmp(args[1], "explica") == 0)
     {
-      int found_didactic = 0;
+      int foundDidactic = 0;
 
-      for (int i = 0; i < num_didactic_cmds; i++)
+      for (int i = 0; i < numDidacticCMD; i++)
       {
-        if (strcmp(didactic_cmds[i].name, cmd) == 0)
+        if (strcmp(didacticCMD[i].name, cmd) == 0)
         {
-          fprintf(stdout, "\n--- [ COMANDO: %s ] ---\n", didactic_cmds[i].name);
-          fprintf(stdout, "O que faz: %s\n", didactic_cmds[i].desc);
-          fprintf(stdout, "Exemplo prático: %s\n", didactic_cmds[i].ex);
+          fprintf(stdout, "\n--- [ COMANDO: %s ] ---\n", didacticCMD[i].name);
+          fprintf(stdout, "O que faz: %s\n", didacticCMD[i].desc);
+          fprintf(stdout, "Exemplo prático: %s\n", didacticCMD[i].ex);
           fprintf(stdout, "--------------------------------\n\n");
 
-          found_didactic = 1;
+          foundDidactic = 1;
           break;
         }
       }
 
-      if (found_didactic)
+      if (foundDidactic)
       {
-        linenoiseHistoryAdd(line);
         linenoiseFree(line);
         continue;
       }
+      // se ainda n tiver explicação
+      fprintf(stdout, "Ainda não tenho explicação para '%s'.\n", cmd);
+      linenoiseFree(line);
+      continue;
     }
 
     char **cmdArg = args;
@@ -282,7 +289,6 @@ void history(void)
       stringExecute(cmd, cmdArg);
     }
 
-    linenoiseHistoryAdd(line);
     linenoiseFree(line);
   }
 }

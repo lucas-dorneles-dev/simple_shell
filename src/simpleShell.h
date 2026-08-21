@@ -29,11 +29,17 @@ typedef enum Builtin{
   INVALID
 } Builtin;
 
-void history(void);
-//
 int stringRead(char* input, char** argumentos);
 //
 int stringExecute(char* cmd, char** cmdArg);
+//
+Builtin builtinCode(char *cmd);
+//
+int isBuiltin(char *cmd);
+//
+void stringToExecuteBuiltin(char *cmd, char **args, size_t nArgs);
+//
+void refreshCWD(void);
 //
 void builtinImplementCd(char** args, size_t nArgs);
 //
@@ -43,6 +49,8 @@ void readJson(char* fileContents);
 //
 void loadJsonFile(const char* filename);
 //
-int findExtension(char* cmdArg);
-
+void history(void);
+//
+// int findExtension(char* cmdArg);
+// empetyLine(int argsRead);
 #endif
