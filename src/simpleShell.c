@@ -119,7 +119,7 @@ void refreshCWD(void)
   // se falhar retorna null e o erro
   if (getcwd(CWD, sizeof(CWD)) == NULL)
   {
-    perror("Erro: Não foi possível ler o diretório de trabalho\n");
+    perror("Erro: Não foi possível ler o diretório de trabalho");
     exit(1);
   }
 }
@@ -165,13 +165,24 @@ void readJson(char *file_contents)
     if (numDidacticCMD >= MAX_DIDACTIC_CMDS)
       break;
 
-    const char *name = cJSON_GetObjectItem(cmd, "comando")->valuestring;
-    const char *desc = cJSON_GetObjectItem(cmd, "descricao")->valuestring;
-    const char *ex = cJSON_GetObjectItem(cmd, "exemplo")->valuestring;
+    cJSON *nameItem = cJSON_GetObjectItem(cmd, "comando");
+    cJSON *descItem = cJSON_GetObjectItem(cmd, "descricao");
+    cJSON *exItem = cJSON_GetObjectItem(cmd, "exemplo");
 
-    strncpy(didacticCMD[numDidacticCMD].name, name, 49);
-    strncpy(didacticCMD[numDidacticCMD].desc, desc, 255);
-    strncpy(didacticCMD[numDidacticCMD].ex, ex, 255);
+    if (!cJSON_IsString(nameItem) || !cJSON_IsString(descItem) || !cJSON_IsString(exItem))
+    {
+      fprintf(stderr, "Entrada inválida no JSON (posição %d), pulando...\n", numDidacticCMD);
+      continue;
+    }
+
+    strncpy(didacticCMD[numDidacticCMD].name, nameItem->valuestring, 49);
+    didacticCMD[numDidacticCMD].name[49] = '\0';
+
+    strncpy(didacticCMD[numDidacticCMD].desc, descItem->valuestring, 255);
+    didacticCMD[numDidacticCMD].desc[255] = '\0';
+
+    strncpy(didacticCMD[numDidacticCMD].ex, exItem->valuestring, 255);
+    didacticCMD[numDidacticCMD].ex[255] = '\0';
 
     numDidacticCMD++;
   }
@@ -225,6 +236,12 @@ void history(void)
   // o prompt é o nome do usuário (L do REPL)
   while ((line = linenoise(PROMPT)) != NULL)
   {
+    // check de linha vazia
+    if (line[0] == '\0')
+    { // usuário só apertou Enter
+      linenoiseFree(line);
+      continue;
+    }
     linenoiseHistoryAdd(line);
 
     // realiza a leitura
