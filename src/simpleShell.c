@@ -222,6 +222,14 @@ void loadJsonFile(const char *filename)
   }
 }
 
+// verifica se é um arquivo
+int isFile(char *Arg){
+  char *encontrou = strchr(Arg, '.');
+  if (encontrou != NULL) return 1;
+  else return 0;
+}
+
+
 void history(void)
 {
   // se ele não consegue nem carregar o historico, ele aborta

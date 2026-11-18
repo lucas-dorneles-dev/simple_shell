@@ -51,6 +51,7 @@ void loadJsonFile(const char* filename);
 //
 void history(void);
 //
+int isFile(char *Arg);
 // int findExtension(char* cmdArg);
 // empetyLine(int argsRead);
 #endif
